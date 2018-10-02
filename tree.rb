@@ -1,4 +1,6 @@
+# Prefix Tree
 class Tree
+  class InputError < StandardError; end
 
   attr_reader :letters_map, :root, :root_letter
 
@@ -12,58 +14,58 @@ class Tree
     add_letters(word.split(//))
   end
 
+  def search_word
+    puts 'Enter the first few letters of a word and hit enter'
+    input_letters = gets.chomp.split(//)
+    end_search_node = search_down(self, input_letters)
+    nodes_below = find_nodes_below(end_search_node)
+    join_letters(nodes_below)
+  rescue InputError => error
+    puts error.message
+  end
+
+  protected
+
   def add_letters(letters)
     return @letters_map['complete'] = true if letters.empty?
 
     first_character = letters.shift
     if @letters_map[first_character]
-      @letters_map[first_character].add_letters(letters)
-    else
-      new_tree = Tree.new(self, first_character)
-      new_tree.add_letters(letters)
-      @letters_map[first_character] = new_tree
+      return @letters_map[first_character].add_letters(letters)
     end
-  end
 
-  def search_word
-    # input = gets.chomp
-    # input_letters = input.split(//)
-    input_letters = ["c", "a"]
-    end_search_node = search_down(self, input_letters)
-    nodes_below = find_nodes_below(end_search_node)
-    join_letters(nodes_below)
+    new_tree = Tree.new(self, first_character)
+    new_tree.add_letters(letters)
+    @letters_map[first_character] = new_tree
   end
 
   def search_down(node, input_letters)
-    if input_letters.any?
-      first_character = input_letters.shift
-      search_down(node.letters_map[first_character], input_letters) if node.letters_map[first_character]
-    else
-      node
+    return node if input_letters.empty?
+
+    first_character = input_letters.shift
+    if node.letters_map[first_character]
+      return search_down(node.letters_map[first_character], input_letters)
     end
+
+    raise InputError, 'No words match the your input'
   end
 
   def find_nodes_below(node)
     end_nodes = []
-    deeper_end_nodes = []
+    children = []
     node.letters_map.each do |_letter, tree|
       if tree == true
-        puts "this is an endnode. node: #{node.root_letter}"
         end_nodes << node
-        puts "end_nodes just added: #{end_nodes.map(&:root_letter)}"
       else
-        puts "about to recursively check child #{tree.root_letter}"
-        deeper_end_nodes = find_nodes_below(tree)
-        puts "deeper_end_nodes from recursion: #{deeper_end_nodes.map(&:root_letter)}"
+        children << tree
       end
     end
-    puts "end_nodes before returning: #{end_nodes.map(&:root_letter)}"
-    puts "deeper_end_nodes before returning: #{deeper_end_nodes.map(&:root_letter)}"
-    end_nodes + deeper_end_nodes
+
+    end_nodes + children.map { |tree| find_nodes_below(tree) }.flatten
   end
 
-  def join_letters(nodes_below)
-    nodes_below.map do |node|
+  def join_letters(nodes)
+    nodes.map do |node|
       letters = []
       while node.root
         letters.unshift(node.root_letter)
@@ -75,13 +77,13 @@ class Tree
 end
 
 tree = Tree.new
-tree.add_word("cat")
-tree.add_word("carp")
-tree.add_word("city")
-tree.add_word("dog")
-tree.add_word("eagle")
-tree.add_word("fish")
-tree.add_word("fit")
+tree.add_word('app')
+tree.add_word('application')
+tree.add_word('cat')
+tree.add_word('carp')
+tree.add_word('city')
+tree.add_word('dog')
+tree.add_word('eagle')
+tree.add_word('fish')
+tree.add_word('fit')
 p tree.search_word
-require 'pry'; binding.pry
-# require 'pry'; binding.pry
